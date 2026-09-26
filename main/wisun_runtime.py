@@ -4,6 +4,8 @@ import machine
 import ure
 import utime
 
+RUNTIME_CMD_RETRY_LIMIT = 6  # Consecutive command timeouts before starting recovery.
+
 
 def recover_runtime(reason, ipv6_addr):
     # EVENT 25 alone does not prove that meter traffic has recovered.
@@ -161,12 +163,12 @@ def run(app):
                             app['Am_st_2'] = Am_st_2
                         draw_am_status()
 
-            if cmd_w and recovery_reason is None and cmd_rc <= 10 : # コマンド再送信回数内なら
+            if cmd_w and recovery_reason is None and cmd_rc <= RUNTIME_CMD_RETRY_LIMIT : # コマンド再送信回数内なら
                 if (utime.time() - cmd_tc) >= RES_TOUT : # コマンド送信後の受信待ちタイムアウトを越えたら、コマンド再送信
                     print(">> cmd response timeout " + str(utime.time()))
                     cmd_w = False  # コマンド排他フラグ解除
                     cmd_tc = utime.time()
-            elif cmd_w and recovery_reason is None and cmd_rc > 10 :
+            elif cmd_w and recovery_reason is None and cmd_rc > RUNTIME_CMD_RETRY_LIMIT :
                 recovery_reason = 'command retry limit count=' + str(cmd_rc)
 
         # スマートメーターから長期間受信出来なかった場合の処理
